@@ -3,14 +3,16 @@ __author__ = 'Yangyang Hou <hyy.sun@gmail.com>'
 import sys
 import os
 from subprocess import call, check_call, Popen, PIPE, STDOUT
+from check_time import checktime
 
-# Step1: Put the file names in a text file as the inputfile
-
+# Put the file names in a text file as the inputfile
 # Assume that all files have been uploaded in the hadoop cluster 
 # dir should be a hdfs directory
-dir = sys.argv[1]
 
-cmd = 'hadoop fs -ls '+ dir
+left_dir = sys.argv[1]
+right_path = sys.argv[2]
+
+cmd = 'hadoop fs -ls '+ left_dir
 p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
 content = p.stdout.read()
 files = content.split('\n')
@@ -19,13 +21,24 @@ tmpfile = open(os.path.join('./', 'input.txt'),'w')
 for file in files:
     file = file.split(' ')
     fname = file[len(file)-1]
-    fname = 'hdfs://icme-hadoop1.localdomain' + fname
     if fname.endswith('.e'):
-         tmpfile.write("%s\n" % fname)
+        basename = os.path.basename(fname)
+        ind = basename.rfind('.')
+        basename = basename[0:ind]
+        outdir = os.path.join(right_path, basename)
+        fname = 'hdfs://icme-hadoop1.localdomain' + fname
+        result = True
+        if call(['hadoop', 'fs', '-test', '-e', outdir]) == 0:
+            print outdir
+            result = checktime(fname, outdir)
+            if result:
+                check_call(['hadoop', 'fs', '-rmr', outdir])
+        if result:
+            tmpfile.write("%s\n" % fname)
   
 tmpfile.close()
        
-inputfile = os.path.join(dir,'input.txt')
+inputfile = os.path.join(left_dir,'input.txt')
 if call(['hadoop', 'fs', '-test', '-e', inputfile]) == 0:
     check_call(['hadoop', 'fs', '-rm', inputfile])
 check_call(['hadoop', 'fs', '-copyFromLocal', os.path.join('./','input.txt'), inputfile])

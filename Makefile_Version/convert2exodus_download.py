@@ -110,6 +110,8 @@ parser.add_option('--verbose',
 def main():
     inputfiles = sys.argv[1]   
  
+    if call(['test', '-e', os.path.join(options.tmpdir, 'tmp')]) == 0:
+        check_call(['rm', '-r', os.path.join(options.tmpdir, 'tmp')])
     call(['mkdir', os.path.join(options.tmpdir, 'tmp')])
     print "downloading inputfiles  %s"%(inputfiles)
     check_call(['hadoop', 'fs', '-copyToLocal', inputfiles, os.path.join(options.tmpdir, 'tmp')])
