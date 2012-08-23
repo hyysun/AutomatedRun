@@ -63,4 +63,5 @@ convert2exodus: convert2exodus_download.py exopy2.py
 	echo 'Done! All is updated'
 	
 clean:
-	-rm -r $(tmpdir)tmp
+	@test -e $(tmpdir)tmp && rm -r $(tmpdir)tmp;\
+	echo 'Clean Done!'

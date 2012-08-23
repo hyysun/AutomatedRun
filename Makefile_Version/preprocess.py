@@ -16,6 +16,18 @@ cmd = 'hadoop fs -ls '+ left_dir
 p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
 content = p.stdout.read()
 files = content.split('\n')
+
+cmd = 'hadoop fs -ls '+ right_path
+p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+content = p.stdout.read()
+dirs1 = content.split('\n')
+dirs1 = dirs1[:len(dirs1)-1]
+dirs2 = []
+for i, dir in enumerate(dirs1):
+    if not dir.startswith('Found'):
+        basename = os.path.basename(dir)
+        dirs2.append(basename)
+
 tmpfile = open(os.path.join('./', 'input.txt'),'w')
 
 for file in files:
@@ -30,6 +42,7 @@ for file in files:
         result = True
         if call(['hadoop', 'fs', '-test', '-e', outdir]) == 0:
             print outdir
+            dirs2.remove(basename)
             result = checktime(fname, outdir)
             if result:
                 check_call(['hadoop', 'fs', '-rmr', outdir])
@@ -37,7 +50,10 @@ for file in files:
             tmpfile.write("%s\n" % fname)
   
 tmpfile.close()
-       
+
+for dir in dirs2:
+    check_call(['hadoop', 'fs', '-rmr', os.path.join(right_path, dir)])
+
 inputfile = os.path.join(left_dir,'input.txt')
 if call(['hadoop', 'fs', '-test', '-e', inputfile]) == 0:
     check_call(['hadoop', 'fs', '-rm', inputfile])
