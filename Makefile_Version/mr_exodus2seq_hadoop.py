@@ -204,10 +204,13 @@ class MRExodus2Seq(MRJob):
         result = convert(os.path.join('./', file), self.timesteps, os.path.join('./', outdir), self.variables)
         
         # step3: write back to Hadoop cluster
+        call(['hadoop', 'fs', '-chmod', '-R', '777', os.path.join(self.outdir)])
+        call(['hadoop', 'fs', '-chmod', '-R', '777', os.path.join(self.outdir,outdir)])
         for fname in os.listdir(os.path.join('./', outdir)):
             if call(['hadoop', 'fs', '-test', '-e', os.path.join(self.outdir,outdir,fname)]) == 0:
                 call(['hadoop', 'fs', '-rm', os.path.join(self.outdir,outdir,fname)])
             call(['hadoop', 'fs', '-copyFromLocal', os.path.join('./',outdir,fname),os.path.join(self.outdir,outdir,fname)])
+            call(['hadoop', 'fs', '-chmod', '-R', '777', os.path.join(self.outdir,outdir,fname)])
         call(['rm', os.path.join('./', file)])
         call(['rm', '-r', os.path.join('./', outdir)])
         

@@ -17,16 +17,17 @@ p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=Tru
 content = p.stdout.read()
 files = content.split('\n')
 
-cmd = 'hadoop fs -ls '+ right_path
-p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-content = p.stdout.read()
-dirs1 = content.split('\n')
-dirs1 = dirs1[:len(dirs1)-1]
 dirs2 = []
-for i, dir in enumerate(dirs1):
-    if not dir.startswith('Found'):
-        basename = os.path.basename(dir)
-        dirs2.append(basename)
+if call(['hadoop', 'fs', '-test', '-e', right_path]) == 0:
+    cmd = 'hadoop fs -ls '+ right_path
+    p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+    content = p.stdout.read()
+    dirs1 = content.split('\n')
+    dirs1 = dirs1[:len(dirs1)-1]
+    for i, dir in enumerate(dirs1):
+        if not dir.startswith('Found'):
+            basename = os.path.basename(dir)
+            dirs2.append(basename)
 
 tmpfile = open(os.path.join('./', 'input.txt'),'w')
 
