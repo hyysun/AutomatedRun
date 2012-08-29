@@ -55,7 +55,7 @@ tmpfile.close()
 for dir in dirs2:
     check_call(['hadoop', 'fs', '-rmr', os.path.join(right_path, dir)])
 
-inputfile = os.path.join(left_dir,'input.txt')
+inputfile = os.path.join(right_path,'input.txt')
 if call(['hadoop', 'fs', '-test', '-e', inputfile]) == 0:
     check_call(['hadoop', 'fs', '-rm', inputfile])
 check_call(['hadoop', 'fs', '-copyFromLocal', os.path.join('./','input.txt'), inputfile])
