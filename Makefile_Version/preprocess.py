@@ -11,6 +11,13 @@ from check_time import checktime
 
 left_dir = sys.argv[1]
 right_path = sys.argv[2]
+tmpdir = sys.argv[3]
+var = sys.argv[4]
+inputfile = sys.argv[5]
+
+tmpstr = left_dir[7:]
+index = tmpstr.find('/')
+prefix = 'hdfs://'+tmpstr[0:index]
 
 cmd = 'hadoop fs -ls '+ left_dir
 p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
@@ -19,7 +26,7 @@ files = content.split('\n')
 
 dirs2 = []
 if call(['hadoop', 'fs', '-test', '-e', right_path]) == 0:
-    cmd = 'hadoop fs -ls '+ right_path
+    cmd = 'hadoop fs -ls '+ os.path.join(right_path)
     p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
     content = p.stdout.read()
     dirs1 = content.split('\n')
@@ -27,9 +34,13 @@ if call(['hadoop', 'fs', '-test', '-e', right_path]) == 0:
     for i, dir in enumerate(dirs1):
         if not dir.startswith('Found'):
             basename = os.path.basename(dir)
-            dirs2.append(basename)
+            if basename != var:
+                #print basename
+                dirs2.append(basename)
 
 tmpfile = open(os.path.join('./', 'input.txt'),'w')
+
+flag = True
 
 for file in files:
     file = file.split(' ')
@@ -39,10 +50,14 @@ for file in files:
         ind = basename.rfind('.')
         basename = basename[0:ind]
         outdir = os.path.join(right_path, basename)
-        fname = 'hdfs://icme-hadoop1.localdomain' + fname
+        fname = prefix + fname
+        if flag:
+            call(['mkdir', os.path.join(tmpdir, 'tmp')])
+            check_call(['hadoop', 'fs', '-copyToLocal', fname, os.path.join(tmpdir, 'tmp/template.e')])
+            flag = False
         result = True
         if call(['hadoop', 'fs', '-test', '-e', outdir]) == 0:
-            print outdir
+            #print outdir
             dirs2.remove(basename)
             result = checktime(fname, outdir)
             if result:
@@ -55,7 +70,7 @@ tmpfile.close()
 for dir in dirs2:
     check_call(['hadoop', 'fs', '-rmr', os.path.join(right_path, dir)])
 
-inputfile = os.path.join(right_path,'input.txt')
+#inputfile = os.path.join(right_path,'input.txt')
 if call(['hadoop', 'fs', '-test', '-e', inputfile]) == 0:
     check_call(['hadoop', 'fs', '-rm', inputfile])
 check_call(['hadoop', 'fs', '-copyFromLocal', os.path.join('./','input.txt'), inputfile])

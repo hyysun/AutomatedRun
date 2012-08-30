@@ -110,8 +110,8 @@ parser.add_option('--verbose',
 def main():
     inputfiles = sys.argv[1]   
  
-    if call(['test', '-e', os.path.join(options.tmpdir, 'tmp')]) == 0:
-        check_call(['rm', '-r', os.path.join(options.tmpdir, 'tmp')])
+    #if call(['test', '-e', os.path.join(options.tmpdir, 'tmp')]) == 0:
+    #   check_call(['rm', '-r', os.path.join(options.tmpdir, 'tmp')])
     call(['mkdir', os.path.join(options.tmpdir, 'tmp')])
     print "downloading inputfiles  %s"%(inputfiles)
     check_call(['hadoop', 'fs', '-copyToLocal', inputfiles, os.path.join(options.tmpdir, 'tmp')])
@@ -120,14 +120,15 @@ def main():
     values = []
 
     for fname in os.listdir(os.path.join(options.tmpdir, 'tmp')):
-        reader = SequenceFile.Reader(os.path.join(options.tmpdir, 'tmp', fname))
-        key_class = reader.getKeyClass()
-        value_class = reader.getValueClass()
-        key = key_class()
-        value = value_class()
-        while reader.next(key, value):
-            order[int(key.get())] = value.get()
-        reader.close()
+        if fname != 'template.e':
+            reader = SequenceFile.Reader(os.path.join(options.tmpdir, 'tmp', fname))
+            key_class = reader.getKeyClass()
+            value_class = reader.getValueClass()
+            key = key_class()
+            value = value_class()
+            while reader.next(key, value):
+                order[int(key.get())] = value.get()
+            reader.close()
 
     var = [ ]  
     for key,val in sorted(order.iteritems()):

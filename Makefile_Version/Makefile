@@ -17,15 +17,16 @@
 # # # # # # # # #
 
 timesteps=10
-tmpdir=./
+tmpdir?=./
 output=
-template=
+template?=$(tmpdir)tmp/template.e
 varname=
 variables=
 
-outdir?=$(dir)makedata#end of the line
+outdir?=$(dir)output/#end of the line
+exodus2seq_output=$(outdir)data/#end of the line
 inputfile=$(outdir)input.txt#end of the line
-globalvar_input=$(outdir)/*/*part*.seq#end of the line
+globalvar_input=$(exodus2seq_output)*/*part*.seq#end of the line
 globalvar_output=$(outdir)$(varname)#end of the line
 convert2exodus_input=$(globalvar_output)/part*#end of the line
     
@@ -37,20 +38,21 @@ simform-deploy.tar.gz: exopy2.py
 
 preprocess: preprocess.py
 	@echo 'Preprocessing...';\
-	python preprocess.py $(dir) $(outdir);\
+	time python preprocess.py $(dir) $(exodus2seq_output) $(tmpdir) $(varname) $(inputfile);\
 	echo 'Done!'
 	
 exodus2seq: preprocess mr_exodus2seq_hadoop.py simform-deploy.tar.gz
 	@echo 'Converting exodus files to sequence files...';\
 	hadoop fs -test -z $(inputfile) || time python mr_exodus2seq_hadoop.py \
-	$(inputfile) -r hadoop --python-archive simform-deploy.tar.gz -t $(timesteps) -d $(outdir) --variables $(variables);\
+	$(inputfile) -r hadoop --python-archive simform-deploy.tar.gz \
+	-t $(timesteps) -d $(exodus2seq_output) --variables $(variables);\
 	echo 'Done! All is updated!';\
 	hadoop fs -rm $(inputfile)
 	
 globalvar: mr_globalvar_hadoop.py
 	@echo 'Computing the global variance...';\
 	hadoop fs -test -e $(globalvar_output) && \
-	python check_time.py $(outdir) $(globalvar_output) && \
+	python check_time.py $(exodus2seq_output) $(globalvar_output) && \
 	hadoop fs -rmr $(globalvar_output);\
 	hadoop fs -test -e $(globalvar_output) || \
 	time python mr_globalvar_hadoop.py $(globalvar_input) -r hadoop \
@@ -62,7 +64,7 @@ convert2exodus: convert2exodus_download.py simform-deploy.tar.gz
 	@echo 'Inserting the global variance to a new exodus file...';\
 	time python convert2exodus_download.py $(convert2exodus_input) \
 	--template $(template) --output $(output) \
-	--tmpdir $(tmpdir)  --varname $(varname) --python-archive simform-deploy.tar.gz;\
+	--tmpdir $(tmpdir)  --varname $(varname);\
 	echo 'Done! All is updated'
 	
 clean:
