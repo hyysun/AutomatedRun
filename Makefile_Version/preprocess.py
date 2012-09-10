@@ -11,9 +11,8 @@ from check_time import checktime
 
 left_dir = sys.argv[1]
 right_path = sys.argv[2]
-tmpdir = sys.argv[3]
-var = sys.argv[4]
-inputfile = sys.argv[5]
+var = sys.argv[3]
+inputfile = sys.argv[4]
 
 tmpstr = left_dir[7:]
 index = tmpstr.find('/')
@@ -40,8 +39,6 @@ if call(['hadoop', 'fs', '-test', '-e', right_path]) == 0:
 
 tmpfile = open(os.path.join('./', 'input.txt'),'w')
 
-flag = True
-
 for file in files:
     file = file.split(' ')
     fname = file[len(file)-1]
@@ -51,10 +48,6 @@ for file in files:
         basename = basename[0:ind]
         outdir = os.path.join(right_path, basename)
         fname = prefix + fname
-        if flag:
-            call(['mkdir', os.path.join(tmpdir, 'tmp')])
-            check_call(['hadoop', 'fs', '-copyToLocal', fname, os.path.join(tmpdir, 'tmp/template.e')])
-            flag = False
         result = True
         if call(['hadoop', 'fs', '-test', '-e', outdir]) == 0:
             #print outdir

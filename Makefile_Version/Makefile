@@ -38,7 +38,7 @@ simform-deploy.tar.gz: exopy2.py
 
 preprocess: preprocess.py
 	@echo 'Preprocessing...';\
-	time python preprocess.py $(dir) $(exodus2seq_output) $(tmpdir) $(varname) $(inputfile);\
+	time python preprocess.py $(dir) $(exodus2seq_output) $(varname) $(inputfile);\
 	echo 'Done!'
 	
 exodus2seq: preprocess mr_exodus2seq_hadoop.py simform-deploy.tar.gz
@@ -61,11 +61,19 @@ globalvar: mr_globalvar_hadoop.py
 
 	
 convert2exodus: convert2exodus_download.py simform-deploy.tar.gz
-	@echo 'Inserting the global variance to a new exodus file...';\
+	@test -e $(template) && \
+	echo 'Inserting the global variance to a new exodus file...' && \
 	time python convert2exodus_download.py $(convert2exodus_input) \
 	--template $(template) --output $(output) \
-	--tmpdir $(tmpdir)  --varname $(varname);\
-	echo 'Done! All is updated'
+	--tmpdir $(tmpdir)  --varname $(varname) \
+	&& echo 'Done! All is updated';\
+	test -e $(template) || echo 'Template file does not exist!' && \
+	python grabtemplate.py $(dir) $(tmpdir) && \
+	echo 'Inserting the global variance to a new exodus file...' && \
+	time python convert2exodus_download.py $(convert2exodus_input) \
+	--template $(tmpdir)tmp/template.e --output $(output) \
+	--tmpdir $(tmpdir)  --varname $(varname) \
+	&& echo 'Done! All is updated'
 	
 clean:
 	@test -e $(tmpdir)tmp && rm -r $(tmpdir)tmp;\
